@@ -9,7 +9,7 @@ Requires macOS with Xcode 26.3 and its command-line tools selected. DotShelf run
 ARCHS="arm64 x86_64" ./build-app.sh .build/universal
 ```
 
-Without a destination argument, the script installs `~/Applications/DotShelf.app`. By default it builds the host architecture and signs ad hoc. A hand build takes its version from the last Git tag and its build number from the commit count, so it never claims a version that has not been released; only the release command passes `VERSION` explicitly. The complete staged bundle is verified before replacing an existing DotShelf installation. A failed build preserves the previous installation. There is no direct `swiftc` fallback.
+The output directory is required and only receives the built app; the script installs nothing. By default it builds the host architecture and signs ad hoc. A hand build takes its version from the last Git tag and its build number from the commit count, so it never claims a version that has not been released; only the release command passes `VERSION` explicitly. The complete staged bundle is verified before it replaces an app that is already in the output directory; a failed build preserves the previous app. There is no direct `swiftc` fallback.
 
 The executable and SwiftPM target remain `KonfigEditor`; the bundle identifier remains `ai.robin.konfigeditor` so existing preferences are retained. The SwiftPM resource bundle, `DotShelf_KonfigEditor.bundle`, is copied into `Contents/Resources`. Both the application and resource bundle use English as the development language. The application resolves its embedded resource bundle before falling back to SwiftPM's resolver for command-line development.
 

@@ -111,12 +111,12 @@ developer directory, then run:
 ```sh
 git clone https://github.com/robin-bially/DotShelf.git
 cd DotShelf
-./build-app.sh
-open ~/Applications/DotShelf.app
+./build-app.sh .build/local
+open .build/local/DotShelf.app
 ```
 
-The build script installs a locally signed app in `~/Applications`.
-See [build options](docs/RELEASING.md#local-builds) for a different destination or a Universal build.
+The build script writes a locally signed app into the output directory you pass and installs nothing; installing goes through the Homebrew cask above.
+See [build options](docs/RELEASING.md#local-builds) for a Universal build or other variables.
 
 </details>
 

@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# Only a fully verified bundle replaces the installed app.
+# Builds a signed app into the given output directory. Installing is a
+# separate step, normally through the Homebrew cask.
 cd "$(dirname "$0")"
 APP_NAME="DotShelf"
 BIN_NAME="KonfigEditor"
@@ -17,7 +18,12 @@ if [[ -z "${BUILD_NUMBER:-}" ]]; then
     [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]] || BUILD_NUMBER=1
 fi
 CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}"
-DEST="${1:-$HOME/Applications}"
+if [[ $# -eq 0 ]]; then
+    echo "Usage: ./build-app.sh <output-dir>" >&2
+    echo "Writes a signed DotShelf.app into <output-dir> and installs nothing." >&2
+    exit 1
+fi
+DEST="$1"
 
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "VERSION must be x.y.z." >&2; exit 1; }
 [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo "BUILD_NUMBER must be a positive integer." >&2; exit 1; }
@@ -31,11 +37,11 @@ mkdir -p "$DEST"
 DEST="$(cd "$DEST" && pwd)"
 STAGING="$(mktemp -d "$DEST/.DotShelf-build.XXXXXX")"
 APP_DIR="$STAGING/$APP_NAME.app"
-INSTALLED="$DEST/$APP_NAME.app"
+OUTPUT_APP="$DEST/$APP_NAME.app"
 cleanup() {
     local result=$?
-    if [[ ( -e "$STAGING/previous.app" || -L "$STAGING/previous.app" ) && ! -e "$INSTALLED" && ! -L "$INSTALLED" ]]; then
-        mv "$STAGING/previous.app" "$INSTALLED" || { echo "The previous app is preserved at $STAGING/previous.app" >&2; exit 1; }
+    if [[ ( -e "$STAGING/previous.app" || -L "$STAGING/previous.app" ) && ! -e "$OUTPUT_APP" && ! -L "$OUTPUT_APP" ]]; then
+        mv "$STAGING/previous.app" "$OUTPUT_APP" || { echo "The previous app is preserved at $STAGING/previous.app" >&2; exit 1; }
     fi
     rm -rf "$STAGING"
     exit "$result"
@@ -113,8 +119,8 @@ fi
 codesign "${sign_options[@]}" "$APP_DIR"
 codesign --verify --deep --strict --verbose=2 "$APP_DIR"
 
-if [[ -e "$INSTALLED" || -L "$INSTALLED" ]]; then
-    mv "$INSTALLED" "$STAGING/previous.app"
+if [[ -e "$OUTPUT_APP" || -L "$OUTPUT_APP" ]]; then
+    mv "$OUTPUT_APP" "$STAGING/previous.app"
 fi
-mv "$APP_DIR" "$INSTALLED"
-echo "✓ Ready: $INSTALLED"
+mv "$APP_DIR" "$OUTPUT_APP"
+echo "✓ Ready: $OUTPUT_APP"
