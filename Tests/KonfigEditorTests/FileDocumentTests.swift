@@ -27,7 +27,7 @@ final class FileDocumentTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "{\"value\":3}")
         let attrs = try FileManager.default.attributesOfItem(atPath: target.path)
         XCTAssertEqual((attrs[.posixPermissions] as? NSNumber)?.intValue, 0o600)
-        let backups = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).filter { $0.pathExtension == "bak" }
+        let backups = try FileManager.default.contentsOfDirectory(at: FileDocument.backupFolder(for: target), includingPropertiesForKeys: nil).filter { $0.pathExtension == "bak" }
         XCTAssertEqual(backups.count, 2)
         XCTAssertEqual(try Set(backups.map { try String(contentsOf: $0, encoding: .utf8) }), ["{\"value\":1}", "{\"value\":2}"])
         for backup in backups {
@@ -35,6 +35,23 @@ final class FileDocumentTests: XCTestCase {
             XCTAssertEqual(attrs[.type] as? FileAttributeType, .typeRegular)
             XCTAssertEqual((attrs[.posixPermissions] as? NSNumber)?.intValue, 0o600)
         }
+    }
+
+    func testSnapshotsStayInOneHiddenFolderPerFile() throws {
+        let url = try write("config.json", "{\"a\":1}")
+        _ = try FileDocument.read(url).write("{\"a\":2}", at: url, backup: true)
+        _ = try FileDocument.read(url).write("{\"a\":3}", at: url, backup: true)
+
+        let entries = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+        XCTAssertFalse(entries.contains { $0.hasSuffix(".bak") }, "Saving must not scatter snapshot files in the directory")
+        XCTAssertEqual(entries.filter { $0 == ".dotshelf" }, [".dotshelf"])
+
+        let snapshots = try FileManager.default.contentsOfDirectory(at: FileDocument.backupFolder(for: url), includingPropertiesForKeys: nil)
+        XCTAssertEqual(snapshots.filter { $0.pathExtension == "bak" }.count, 2, "Two saves must keep two snapshots even within the same second")
+        XCTAssertEqual(try Set(snapshots.map { try String(contentsOf: $0, encoding: .utf8) }), ["{\"a\":1}", "{\"a\":2}"])
+
+        let ignore = try String(contentsOf: directory.appendingPathComponent(".dotshelf/.gitignore"), encoding: .utf8)
+        XCTAssertEqual(ignore, "*\n", "A dotfile repository must not report snapshots as untracked")
     }
 
     func testExternalEditAndDeletionAreNeverOverwritten() throws {

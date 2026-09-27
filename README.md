@@ -49,7 +49,7 @@ Built with SwiftUI and AppKit, with no third-party runtime dependencies.
 | **Run scripts where you edit them** | Start a shell script or a `docker compose` stack with **⌃R** or the green play button – it runs right away, options only when you ask for them (**⌥⌃R**). A temporary terminal entry appears in the sidebar and its output opens in the editor, with input, stop, rerun and clear. |
 | **Control over your edits** | Save explicitly with **⌘S**. Save, discard or cancel when leaving unsaved changes. Failed saves keep your buffer intact. |
 | **Careful file handling** | Preserve symlinks and existing permissions. Detect external changes before saving. Create new files with owner-only permissions. |
-| **Backups by default** | Each save of an existing file creates a separate backup beside its target. |
+| **Backups by default** | Each save of an existing file keeps a snapshot in a hidden `.dotshelf` folder beside it, one subfolder per file. |
 
 English is the default interface language. See the [usage guide](docs/USAGE.md)
 for keyboard shortcuts, default file locations and current limitations.

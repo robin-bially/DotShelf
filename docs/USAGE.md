@@ -104,7 +104,9 @@ still makes no calls of its own.
   highlighting.
 - Conflict detection stops a save and asks you to reload. Copy your edits before
   reloading if you need to merge them; there is no visual merge editor yet.
-- Backups have no in-app browser, automatic cleanup or restore button yet.
+- Backups collect in a hidden `.dotshelf` folder beside each file, one subfolder per
+  file, named after the save time and ignored by Git. They have no in-app browser,
+  automatic cleanup or restore button yet.
 - The terminal renders script output with colours, progress lines and simple
   cursor moves, but it is not a full emulator: full-screen programs (vim, htop),
   scroll regions and mouse reporting are not supported. Output is kept for the

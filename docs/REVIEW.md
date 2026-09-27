@@ -21,7 +21,7 @@ pipeline. Version 0.1.0 is available as a signed, notarized Universal app and a 
 | G1 | JSON validation did not update during typing. | Text changes update validation immediately. |
 | G2 | Strict JSON accepted comments, trailing commas and empty input. | JSON and JSONC are parsed separately; invalid strict JSON is rejected by validation. Saving invalid text remains an intentional supported operation. |
 | G3 | CRLF comments swallowed subsequent content. | Scan Unicode scalars, preserve line endings and reject unterminated block comments. |
-| G4 | Two saves in a second overwrote the first backup. | Unique UUID-backed backup names; existing backups are never deleted during a save. |
+| G4 | Two saves in a second overwrote the first backup. | Backup names carry the save time and a counter, and snapshots live in a hidden `.dotshelf` folder beside the target; existing snapshots are never deleted during a save. |
 | G5 | No automated regression tests. | XCTest covers JSON, file protection, Store transitions, lifecycle and localization. |
 | G6 | JSONC URLs were colored as comments. | Comment matching skips quoted strings; string/comment colors have a regression test. |
 | G7 | Failed empty-file creation still reported success. | Create with private permissions, check the result and mutate the sidebar only after success. |

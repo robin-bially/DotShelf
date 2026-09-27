@@ -68,9 +68,7 @@ struct FileDocument: Equatable {
             }
         }
         if backup, data != nil {
-            let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
-            let backupURL = dir.appendingPathComponent("\(target.lastPathComponent).\(stamp).\(UUID().uuidString).bak")
-            try fm.copyItem(at: stage, to: backupURL)
+            try Self.storeBackup(of: stage, for: target, using: fm)
         }
         let handle = try FileHandle(forWritingTo: stage)
         do {
@@ -91,5 +89,50 @@ struct FileDocument: Equatable {
         }
         guard result == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
         return try Self.read(url)
+    }
+
+    // MARK: - Backups
+
+    /// Snapshots collect in one hidden folder per directory instead of one loose
+    /// file per save, so editing a dotfile repeatedly leaves the directory clean.
+    static let backupFolderName = ".dotshelf"
+
+    /// One subfolder per protected file keeps a long history readable.
+    static func backupFolder(for target: URL) -> URL {
+        target.deletingLastPathComponent()
+            .appendingPathComponent(backupFolderName, isDirectory: true)
+            .appendingPathComponent(target.lastPathComponent, isDirectory: true)
+    }
+
+    /// Snapshot name: UTC stamp without colons, plus a counter when two saves
+    /// land in the same second.
+    static func backupURL(for target: URL, at date: Date = Date(), using fm: FileManager = .default) -> URL {
+        let stamp = ISO8601DateFormatter().string(from: date).replacingOccurrences(of: ":", with: "-")
+        let folder = backupFolder(for: target)
+        var candidate = folder.appendingPathComponent("\(stamp).bak")
+        var attempt = 1
+        while entryExists(candidate) {
+            candidate = folder.appendingPathComponent("\(stamp)-\(attempt).bak")
+            attempt += 1
+        }
+        return candidate
+    }
+
+    private static func storeBackup(of stage: URL, for target: URL, using fm: FileManager) throws {
+        let folder = backupFolder(for: target)
+        let root = folder.deletingLastPathComponent()
+        try fm.createDirectory(at: root, withIntermediateDirectories: true,
+                               attributes: [.posixPermissions: 0o700])
+        try keepSnapshotsUntracked(in: root, using: fm)
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true,
+                               attributes: [.posixPermissions: 0o700])
+        try fm.copyItem(at: stage, to: backupURL(for: target, using: fm))
+    }
+
+    /// Dotfile repositories would otherwise report every snapshot as untracked.
+    private static func keepSnapshotsUntracked(in root: URL, using fm: FileManager) throws {
+        let ignore = root.appendingPathComponent(".gitignore")
+        guard !entryExists(ignore) else { return }
+        try Data("*\n".utf8).write(to: ignore)
     }
 }
