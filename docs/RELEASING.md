@@ -6,17 +6,17 @@ Requires macOS with Xcode 26.3 and its command-line tools selected. DotShelf run
 
 ```bash
 ./build-app.sh .build/local
-ARCHS="arm64 x86_64" VERSION=1.0.0 BUILD_NUMBER=1 ./build-app.sh .build/universal
+ARCHS="arm64 x86_64" ./build-app.sh .build/universal
 ```
 
-Without a destination argument, the script installs `~/Applications/DotShelf.app`. By default it builds the host architecture and signs ad hoc. The complete staged bundle is verified before replacing an existing DotShelf installation. A failed build preserves the previous installation. There is no direct `swiftc` fallback.
+Without a destination argument, the script installs `~/Applications/DotShelf.app`. By default it builds the host architecture and signs ad hoc. A hand build takes its version from the last Git tag and its build number from the commit count, so it never claims a version that has not been released; only the release command passes `VERSION` explicitly. The complete staged bundle is verified before replacing an existing DotShelf installation. A failed build preserves the previous installation. There is no direct `swiftc` fallback.
 
 The executable and SwiftPM target remain `KonfigEditor`; the bundle identifier remains `ai.robin.konfigeditor` so existing preferences are retained. The SwiftPM resource bundle, `DotShelf_KonfigEditor.bundle`, is copied into `Contents/Resources`. Both the application and resource bundle use English as the development language. The application resolves its embedded resource bundle before falling back to SwiftPM's resolver for command-line development.
 
 | Variable | Default / meaning |
 | --- | --- |
-| `VERSION` | `1.0.0`; three numeric components `x.y.z` |
-| `BUILD_NUMBER` | `1`; positive integer for `CFBundleVersion` |
+| `VERSION` | The last Git tag without its `v` prefix (`git describe --tags --abbrev=0`); three numeric components `x.y.z`, or `0.0.0` when no tag exists |
+| `BUILD_NUMBER` | The commit count (`git rev-list --count HEAD`); positive integer for `CFBundleVersion` |
 | `ARCHS` | Host architecture; use `arm64 x86_64` for Universal |
 | `CODE_SIGN_IDENTITY` | `-` for ad hoc; a Developer ID Application identity enables Hardened Runtime and secure timestamps |
 | `CODE_SIGN_KEYCHAIN` | Optional keychain containing the signing key |
@@ -28,8 +28,8 @@ An ad-hoc signature is intended for local development. Distribution uses Develop
 A Developer ID Application certificate with its private key and an existing `notarytool` keychain profile are required. Set up a profile interactively with `xcrun notarytool store-credentials PROFILE_NAME`. Keep credentials out of the repository.
 
 ```bash
-VERSION=1.0.0 ./scripts/release.sh              # build the notarized artifacts
-VERSION=1.0.0 ./scripts/release.sh --publish    # also publish release and cask
+VERSION=x.y.z ./scripts/release.sh              # build the notarized artifacts
+VERSION=x.y.z ./scripts/release.sh --publish    # also publish release and cask
 ```
 
 `BUILD_NUMBER` defaults to the commit count, `CODE_SIGN_IDENTITY` to the first Developer ID identity in the keychain, `NOTARY_PROFILE` to `robin-bially-notary` and `RELEASE_REPOSITORY` to `robin-bially/DotShelf`; set them explicitly on another machine or for another team. `--dry-run` checks the prerequisites without building, `--force` tolerates a dirty working tree and `--draft` creates the GitHub release as a draft.

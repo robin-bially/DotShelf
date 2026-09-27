@@ -5,8 +5,17 @@ set -euo pipefail
 cd "$(dirname "$0")"
 APP_NAME="DotShelf"
 BIN_NAME="KonfigEditor"
-VERSION="${VERSION:-1.0.0}"
-BUILD_NUMBER="${BUILD_NUMBER:-1}"
+# Version and build number come from Git, so a hand build never claims a version
+# that has not been released: the last tag and the commit count describe exactly
+# the state in the working tree. The release path passes both explicitly.
+if [[ -z "${VERSION:-}" ]]; then
+    VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')" || VERSION=""
+    [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || VERSION="0.0.0"
+fi
+if [[ -z "${BUILD_NUMBER:-}" ]]; then
+    BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null)" || BUILD_NUMBER=""
+    [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]] || BUILD_NUMBER=1
+fi
 CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}"
 DEST="${1:-$HOME/Applications}"
 
